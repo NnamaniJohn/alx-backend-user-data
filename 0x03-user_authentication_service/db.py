@@ -7,8 +7,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from typing import Dict
+import logging
 
 from user import Base, User
+
+logging.disable(logging.WARNING)
 
 
 class DB:
