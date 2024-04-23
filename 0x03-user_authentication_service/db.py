@@ -2,6 +2,7 @@
 """DB module
 """
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
@@ -34,14 +35,23 @@ class DB:
         """Add a user to the database
         """
         user = User(email=email, hashed_password=hashed_password)
-        self._session.add(user)
-        self._session.commit()
-        return user
+        try:
+            self._session.add(user)
+            self._session.commit()
+            return user
+        except SQLAlchemyError as e:
+            self._session.rollback()
+            raise e
 
     def find_user_by(self, **kwargs) -> User:
         """Find a user by a specific attribute
         """
-        return self._session.query(User).filter_by(**kwargs).first()
+        try:
+            return self._session.query(User).filter_by(**kwargs).first()
+        except NoResultFound:
+            raise NoResultFound("No user found for the specified criteria")
+        except InvalidRequestError as e:
+            raise e
 
     def update_user(self, user_id: int, **kwargs) -> None:
         """Update a user's attributes
