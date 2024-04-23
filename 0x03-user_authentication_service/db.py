@@ -38,10 +38,10 @@ class DB:
         try:
             self._session.add(user)
             self._session.commit()
-            return user
         except SQLAlchemyError as e:
             self._session.rollback()
-            raise e
+            raise
+        return user
 
     def find_user_by(self, **kwargs) -> User:
         """Find a user by a specific attribute
