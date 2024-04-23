@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """DB module
 """
+import logging
+from typing import Dict
+
 from sqlalchemy import create_engine
-from sqlalchemy.exc import InvalidRequestError, NoResultFound
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
-from typing import Dict
-import logging
 
 from user import Base, User
 
@@ -36,33 +38,45 @@ class DB:
         return self.__session
 
     def add_user(self, email: str, hashed_password: str) -> User:
-        """Add a user to the database
+        """Adds a new user to the db
         """
-        user = User(email=email, hashed_password=hashed_password)
+        # Create new user
+        newUser = User(email=email, hashed_password=hashed_password)
         try:
-            self._session.add(user)
+            self._session.add(newUser)
             self._session.commit()
         except Exception as e:
+            print(f"Error adding user to database: {e}")
             self._session.rollback()
             raise
-        return user
+        return newUser
 
     def find_user_by(self, **kwargs: Dict[str, str]) -> User:
-        """Find a user by a specific attribute
+        """Find a user by attribute
         """
+        session = self._session
         try:
-            return self._session.query(User).filter_by(**kwargs).one()
+            user = session.query(User).filter_by(**kwargs).one()
         except NoResultFound:
             raise NoResultFound()
         except InvalidRequestError:
             raise InvalidRequestError()
+        return user
 
     def update_user(self, user_id: int, **kwargs) -> None:
-        """Update a user's attributes
+        """Updates a user's attributes
         """
-        user = self.find_user_by(id=user_id)
+        try:
+            user = self.find_user_by(id=user_id)
+        except NoResultFound:
+            raise ValueError("User with id {} not found".format(user_id))
+
         for key, value in kwargs.items():
             if not hasattr(user, key):
-                raise ValueError
+                raise ValueError("User has no attribute {}".format(key))
             setattr(user, key, value)
-        self._session.commit()
+
+        try:
+            self._session.commit()
+        except InvalidRequestError:
+            raise ValueError("Invalid request")
