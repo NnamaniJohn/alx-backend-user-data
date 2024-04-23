@@ -2,7 +2,7 @@
 """DB module
 """
 from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError, NoResultFound
+from sqlalchemy.exc import InvalidRequestError, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
@@ -38,7 +38,7 @@ class DB:
         try:
             self._session.add(user)
             self._session.commit()
-        except SQLAlchemyError as e:
+        except Exception as e:
             self._session.rollback()
             raise
         return user
